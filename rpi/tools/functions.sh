@@ -14,6 +14,7 @@ get_start_and_sectors() {
     PART_TYPE=$2
 
     # Grab the 2nd and 4th fields, which are Start and Sectors
+    # Note: We will need to get the $3 field if $2 was * (bootable?)
     FDISK_OUT=$(fdisk -l $IMG_FILE | awk -v pat="$PART_TYPE" '$0~pat{print $2" "$4}')
     echo $FDISK_OUT
 }
@@ -45,15 +46,18 @@ create_resized_file() {
     if [ -f $RESIZED_FILE ]; then
         rm $RESIZED_FILE
     fi
-    # We will calculate the ROOT_SECTORS
+    # How to calculate sizes:
+    # Boot partition is the same as the original
+    # Root is the file size in sectors (SECTORS), minus the size of the boot
+    # and minus the empty.
     LS_OUT=$(ls -l $RESIZED_IMAGE | awk '{print $5}')
     SECTORS=$((LS_OUT / 512))
-    ROOT_SECTORS=$((SECTORS - BOOT_SECTORS))
-    # I think these just have to be close enough.
+    ROOT_SECTORS=$((SECTORS - BOOT_START))
+    ROOT_SECTORS=$((ROOT_SECTORS - BOOT_SECTORS))
     cat << EOF >> $RESIZED_FILE
 label: dos
 label-id: 0xbd98648d
-device: $RESIZED_NAME.img
+device: $RESIZED_IMAGE
 unit: sectors
 $RESIZED1 : start=        $BOOT_START, size=       $BOOT_SECTORS, type=c
 $RESIZED2 : start=        $ROOT_START, size=    $ROOT_SECTORS, type=83

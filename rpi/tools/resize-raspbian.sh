@@ -35,6 +35,9 @@ if [ ! -d $SRC_ROOT ]; then
 fi
 
 # These commands might have errors on Ubuntu. You can ignore these, apparently.
+echo "Mounting source image"
+echo mount -o loop,offset=$BOOT_OFFSET,sizelimit=$BOOT_LIMIT $INPUT_IMAGE $SRC_BOOT
+echo mount -o loop,offset=$ROOT_OFFSET,sizelimit=$ROOT_LIMIT $INPUT_IMAGE $SRC_ROOT
 mount -o loop,offset=$BOOT_OFFSET,sizelimit=$BOOT_LIMIT $INPUT_IMAGE $SRC_BOOT
 mount -o loop,offset=$ROOT_OFFSET,sizelimit=$ROOT_LIMIT $INPUT_IMAGE $SRC_ROOT
 
@@ -44,12 +47,15 @@ dd if=/dev/zero of=$RESIZED_IMAGE bs=1M count=$DESIRED_SIZE
 
 create_resized_file $RESIZED_IMAGE $BOOT_START $BOOT_SECTORS $ROOT_START $RESIZED_INPUT_FILE
 
+echo "sfdisk on resized image with partitioning file"
 sfdisk $RESIZED_IMAGE < $RESIZED_INPUT_FILE
 
 # attach resized image for each partition
 echo "Mounting resized image partitions on loopback"
-losetup -f $RESIZED_IMAGE -o $BOOT_OFFSET
-losetup -f $RESIZED_IMAGE -o $ROOT_OFFSET
+echo losetup -f -o $BOOT_OFFSET $RESIZED_IMAGE
+echo losetup -f -o $ROOT_OFFSET  $RESIZED_IMAGE 
+losetup -f -o $BOOT_OFFSET $RESIZED_IMAGE
+losetup -f -o $ROOT_OFFSET  $RESIZED_IMAGE 
 
 LOOPBACKS=$( get_loopbacks $INPUT_IMAGE )
 INPUT_BOOT=$(echo $LOOPBACKS | cut -f1 -d,)
@@ -58,13 +64,13 @@ LOOPBACKS=$( get_loopbacks $RESIZED_IMAGE )
 OUTPUT_BOOT=$(echo $LOOPBACKS | cut -f1 -d,)
 OUTPUT_ROOT=$(echo $LOOPBACKS | cut -f2 -d,)
 
-#echo "input boot and root loopbacks $INPUT_BOOT, $INPUT_ROOT"
-#echo "output boot and root loopbacks $OUTPUT_BOOT, $OUTPUT_ROOT"
+echo "input boot and root loopbacks $INPUT_BOOT, $INPUT_ROOT"
+echo "output boot and root loopbacks $OUTPUT_BOOT, $OUTPUT_ROOT"
 
 echo "Copying src image to dest image"
 # block copy each partition of source image to resized image
-#echo "dd if=$INPUT_BOOT of=$OUTPUT_BOOT bs=512 count=$BOOT_SECTORS"
-#echo "dd if=$INPUT_ROOT of=$OUTPUT_ROOT bs=512 count=$ROOT_SECTORS"
+echo "dd if=$INPUT_BOOT of=$OUTPUT_BOOT bs=512 count=$BOOT_SECTORS"
+echo "dd if=$INPUT_ROOT of=$OUTPUT_ROOT bs=512 count=$ROOT_SECTORS"
 dd if=$INPUT_BOOT of=$OUTPUT_BOOT bs=512 count=$BOOT_SECTORS
 dd if=$INPUT_ROOT of=$OUTPUT_ROOT bs=512 count=$ROOT_SECTORS
 
@@ -111,9 +117,11 @@ echo "root partition size=$ROOT_SIZE (blocks), $ROOT_LIMIT (bytes), offset=$OFFS
 mount -o loop,offset=$BOOT_OFFSET,sizelimit=$BOOT_LIMIT $RESIZED_IMAGE $SRC_BOOT
 mount -o loop,offset=$ROOT_OFFSET,sizelimit=$ROOT_LIMIT $RESIZED_IMAGE $SRC_ROOT
 
-# fixup post-resize partition IDs for next bootup
-sed -i "s/${PARTID}/${DISKID}/g" $SRC_ROOT/etc/fstab
-sed -i "s/${PARTID}/${DISKID}/"  $SRC_BOOT/cmdline.txt
+echo "fixup post-resize partition IDs for next bootup"
+echo sed -i "s/${PARTID}/${DEST_PARTID}/g" $SRC_ROOT/etc/fstab
+echo sed -i "s/${PARTID}/${DEST_PARTID}/"  $SRC_BOOT/cmdline.txt
+#sed -i "s/${PARTID}/${DEST_PARTID}/g" $SRC_ROOT/etc/fstab
+#sed -i "s/${PARTID}/${DEST_PARTID}/"  $SRC_BOOT/cmdline.txt
 
 umount $SRC_ROOT
 umount $SRC_BOOT
