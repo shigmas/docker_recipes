@@ -118,10 +118,10 @@ mount -o loop,offset=$BOOT_OFFSET,sizelimit=$BOOT_LIMIT $RESIZED_IMAGE $SRC_BOOT
 mount -o loop,offset=$ROOT_OFFSET,sizelimit=$ROOT_LIMIT $RESIZED_IMAGE $SRC_ROOT
 
 echo "fixup post-resize partition IDs for next bootup"
-echo sed -i "s/${PARTID}/${DEST_PARTID}/g" $SRC_ROOT/etc/fstab
-echo sed -i "s/${PARTID}/${DEST_PARTID}/"  $SRC_BOOT/cmdline.txt
-#sed -i "s/${PARTID}/${DEST_PARTID}/g" $SRC_ROOT/etc/fstab
-#sed -i "s/${PARTID}/${DEST_PARTID}/"  $SRC_BOOT/cmdline.txt
+echo sed -i "s/${ORIG_PARTID}/${DEST_PARTID}/g" $SRC_ROOT/etc/fstab
+echo sed -i "s/${ORIG_PARTID}/${DEST_PARTID}/"  $SRC_BOOT/cmdline.txt
+sed -i "s/${ORIG_PARTID}/${DEST_PARTID}/g" $SRC_ROOT/etc/fstab
+sed -i "s/${ORIG_PARTID}/${DEST_PARTID}/"  $SRC_BOOT/cmdline.txt
 
 umount $SRC_ROOT
 umount $SRC_BOOT
