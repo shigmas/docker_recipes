@@ -27,4 +27,4 @@ jobs:
             apt-get update && apt-get install -y wget
             mkdir /opt
             wget -c https://dl.google.com/go/go1.13.10.linux-armv6l.tar.gz -O - | tar xz -C /opt/
-            /opt/bin/go version
+            /opt/go/bin/go version
