@@ -24,5 +24,7 @@ jobs:
           distribution: ubuntu18.04
           run: |
             uname -a
-            apt-get update && apt-get install golang-1.11
-            go version
+            apt-get update && apt-get install wget
+            mkdir /opt
+            wget -c https://dl.google.com/go/go1.13.10.linux-armv6l.tar.gz -O - | tar xz -C /opt/
+            /opt/bin/go version
