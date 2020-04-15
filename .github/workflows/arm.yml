@@ -1,0 +1,30 @@
+name: arm_builder
+on:
+  push:
+    branches: [ '*' ]
+  pull_request:
+    branches: [ '*' ]
+
+jobs:
+  arm_build:
+    runs-on: ubuntu-18.04
+    name: build_in_arm
+    steps:
+      - name: Set up Go 1.13.3
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.3
+        id: go
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Setup ARM base
+        uses: uraimo/run-on-arch-action@v1.0.8
+        with:
+          architecture: armv7
+          distribution: ubuntu18.04
+          run: |
+            uname -a
+            apt-get update && apt-get install -y wget
+            mkdir /opt
+            wget -c https://dl.google.com/go/go1.13.10.linux-armv6l.tar.gz -O - | tar xz -C /opt/
+            /opt/go/bin/go version
