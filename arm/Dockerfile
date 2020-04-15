@@ -12,6 +12,7 @@ RUN [ "cross-build-end" ]
 
 WORKDIR /var/mode
 
-COPY scripts/* ./
+COPY arm/scripts/* ./
+COPY rpi/tools/* ./
 
 CMD [ "./build.sh"]
