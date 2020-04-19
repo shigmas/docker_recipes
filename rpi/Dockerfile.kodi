@@ -4,12 +4,15 @@ ARG RASPBIAN_VERSION
 
 env $RASPBIAN_VERSION
 
+RUN [ "cross-build-start" ]
+
 RUN apt-get update
 
-RUN apt-get install -y wget unzip vim
+RUN apt-get install -y wget unzip
 
 WORKDIR /opt/builder
 
 COPY rpi/tools/* ./
+RUN [ "cross-build-end" ]
 
 CMD [ "./build-kodi.sh" ]
