@@ -1,0 +1,15 @@
+FROM balenalib/armv7hf
+
+ARG RASPBIAN_VERSION
+
+env $RASPBIAN_VERSION
+
+RUN apt-get update
+
+RUN apt-get install -y wget unzip vim
+
+WORKDIR /opt/builder
+
+COPY rpi/tools/* ./
+
+CMD [ "./build-kodi.sh" ]
