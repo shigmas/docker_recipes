@@ -11,7 +11,7 @@ jobs:
     name: build_image
     env:
       RASPBIAN_VERSION: 2020-02-13-raspbian-buster-lite
-      WORK_DIR: /tmp/images
+      DATA_DIR: /tmp/images
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -21,15 +21,15 @@ jobs:
           aws-region: us-east-2
       - name: Fetch Base Image
         run: |
-          mkdir $WORK_DIR
-          wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/$RASPBIAN_VERSION.zip && unzip $RASPBIAN_VERSION.zip -d $WORK_DIR
+          mkdir $DATA_DIR
+          wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/$RASPBIAN_VERSION.zip && unzip $RASPBIAN_VERSION.zip -d $DATA_DIR
       - name: Build Image
         run: |
           docker build -t kodi.build -f rpi/Dockerfile.kodi .
       - name: Run Image
         run: |
           docker run --rm --privileged multiarch/qemu-user-static:register --reset
-          docker run --privileged -v $WORK_DIR:$WORK_DIR kodi.build
+          docker run --privileged -v $DATA_DIR:$DATA_DIR kodi.build
       - name: Upload Image
         run: |
-          aws cp $WORK_DIR/$RASPBIAN_VERSION-7678.img s3://ear-collection/
+          aws cp $DATA_DIR/$RASPBIAN_VERSION-7678.img s3://ear-collection/

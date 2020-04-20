@@ -1,8 +1,10 @@
 FROM balenalib/armv7hf
 
 ARG RASPBIAN_VERSION
+ARG DATA_DIR
 
 env $RASPBIAN_VERSION
+env $DATA_DIR
 
 RUN [ "cross-build-start" ]
 
@@ -12,6 +14,6 @@ RUN [ "cross-build-end" ]
 
 WORKDIR /var/builder
 
-COPY rpi/tools/* ./
+COPY rpi/scripts/* ./
 
 CMD [ "./build-kodi.sh" ]
