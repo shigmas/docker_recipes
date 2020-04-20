@@ -10,7 +10,7 @@ RUN apt-get update && apt-get -y wget unzip
 
 RUN [ "cross-build-end" ]
 
-WORKDIR /opt/builder
+WORKDIR /var/builder
 
 COPY rpi/tools/* ./
 
