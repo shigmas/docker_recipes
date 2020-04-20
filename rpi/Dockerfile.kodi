@@ -1,0 +1,19 @@
+FROM balenalib/armv7hf
+
+ARG RASPBIAN_VERSION
+ARG DATA_DIR
+
+env $RASPBIAN_VERSION
+env $DATA_DIR
+
+RUN [ "cross-build-start" ]
+
+RUN apt-get update && apt-get -y wget unzip
+
+RUN [ "cross-build-end" ]
+
+WORKDIR /var/builder
+
+COPY rpi/scripts/* ./
+
+CMD [ "./build-kodi.sh" ]

@@ -1,6 +1,6 @@
 FROM balenalib/armv7hf
 
-COPY tools ./
+COPY rpi/scripts ./
 
 RUN apt-get update
 # these should be pulled from a file
