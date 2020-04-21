@@ -23,13 +23,15 @@ jobs:
         run: |
           mkdir $DATA_DIR
           wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/$RASPBIAN_VERSION.zip && unzip $RASPBIAN_VERSION.zip -d $DATA_DIR
+      - name: Check out code
+        uses: actions/checkout@v2
       - name: Build Image
         run: |
           docker build -t kodi.build -f rpi/Dockerfile.kodi .
       - name: Run Image
         run: |
           docker run --rm --privileged multiarch/qemu-user-static:register --reset
-          docker run --privileged -v $DATA_DIR:$DATA_DIR kodi.build
+          docker run --privileged -e RASPBIAN_VERSION=$RASPBIAN_VERSION -e DATA_DIR=$DATA_DIR -v $DATA_DIR:$DATA_DIR kodi.build
       - name: Upload Image
         run: |
-          aws cp $DATA_DIR/$RASPBIAN_VERSION-7678.img s3://ear-collection/
+          aws s3 cp ${DATA_DIR}/${RASPBIAN_VERSION}-7678.img s3://ear-collection/
