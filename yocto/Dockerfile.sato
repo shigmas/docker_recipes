@@ -1,0 +1,23 @@
+FROM ubuntu:latest
+
+RUN apt-get update && apt-get install -y gawk wget git-core \
+    diffstat unzip texinfo gcc-multilib build-essential \
+    chrpath socat cpio python python3 python3-pip \
+    python3-pexpect xz-utils debianutils iputils-ping \
+    libsdl1.2-dev xterm tar locales
+
+# replace docker's "dash" shell with bash so CMD can run 'source'
+RUN rm /bin/sh && ln -s bash /bin/sh
+
+RUN locale-gen en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
+RUN git clone http://git.yoctoproject.org/cgit.cgi/poky/
+
+WORKDIR /opt/yoctoproject
+
+# This should not be run as root. So, something like:
+# docker run -v /opt/yoctoproject:/opt/yoctoproject --user `id -u` yocto.sato
+CMD source /poky/oe-init-build-env build && bitbake core-image-sato
