@@ -3,12 +3,12 @@ FROM balenalib/armv7hf
 ARG RASPBIAN_VERSION
 ARG DATA_DIR
 
-env $RASPBIAN_VERSION
-env $DATA_DIR
+ENV RASPBIAN_VERSION $RASPBIAN_VERSION
+ENV DATA_DIR $DATA_DIR
 
 RUN [ "cross-build-start" ]
 
-RUN apt-get update && apt-get -y wget unzip
+RUN apt-get update && apt-get install -y wget unzip
 
 RUN [ "cross-build-end" ]
 
