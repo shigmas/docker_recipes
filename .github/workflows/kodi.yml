@@ -22,7 +22,7 @@ jobs:
       - name: Fetch Base Image
         run: |
           mkdir $DATA_DIR
-          wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/$RASPBIAN_VERSION.zip && unzip $RASPBIAN_VERSION.zip -d $DATA_DIR
+          wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/$RASPBIAN_VERSION.zip && unzip $RASPBIAN_VERSION.zip -d $DATA_DIR && rm $RASPBIAN_VERSION.zip
       - name: Check out code
         uses: actions/checkout@v2
       - name: Build Image
@@ -34,4 +34,4 @@ jobs:
           docker run --privileged -e RASPBIAN_VERSION=$RASPBIAN_VERSION -e DATA_DIR=$DATA_DIR -v $DATA_DIR:$DATA_DIR kodi.build
       - name: Upload Image
         run: |
-          aws s3 cp ${DATA_DIR}/${RASPBIAN_VERSION}-7678.img s3://ear-collection/
+          aws s3 cp ${DATA_DIR}/${RASPBIAN_VERSION}-4096.img s3://ear-collection/
