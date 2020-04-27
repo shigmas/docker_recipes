@@ -12,6 +12,7 @@ jobs:
     env:
       RASPBIAN_VERSION: 2020-02-13-raspbian-buster-lite
       DATA_DIR: /tmp/images
+      DEST_SIZE: 7678
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -22,7 +23,7 @@ jobs:
       - name: Fetch Base Image
         run: |
           mkdir $DATA_DIR
-          wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/$RASPBIAN_VERSION.zip && unzip $RASPBIAN_VERSION.zip -d $DATA_DIR
+          wget https://downloads.raspberrypi.org/raspbian_lite/images/raspbian_lite-2020-02-14/$RASPBIAN_VERSION.zip && unzip $RASPBIAN_VERSION.zip -d $DATA_DIR && rm $RASPBIAN_VERSION.zip
       - name: Check out code
         uses: actions/checkout@v2
       - name: Build Image
@@ -31,7 +32,7 @@ jobs:
       - name: Run Image
         run: |
           docker run --rm --privileged multiarch/qemu-user-static:register --reset
-          docker run --privileged -e RASPBIAN_VERSION=$RASPBIAN_VERSION -e DATA_DIR=$DATA_DIR -v $DATA_DIR:$DATA_DIR kodi.build
+          docker run --privileged -e RASPBIAN_VERSION=$RASPBIAN_VERSION -e DATA_DIR=$DATA_DIR -e DEST_SIZE=$DEST_SIZE -v $DATA_DIR:$DATA_DIR kodi.build
       - name: Upload Image
         run: |
-          aws s3 cp ${DATA_DIR}/${RASPBIAN_VERSION}-7678.img s3://ear-collection/
+          aws s3 cp ${DATA_DIR}/${RASPBIAN_VERSION}-${DEST_SIZE}.img s3://ear-collection/
