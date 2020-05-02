@@ -33,5 +33,5 @@ jobs:
         env:
           LATEST_IMAGE: $DOCKER_IMAGE:latest
         run: |
-          docker tag $DOCKER_IMAGE:latest $${ secrets.MASA_AWS_ACCT_ID }}$ECR_REPO/$DOCKER_IMAGE:latest:$GITHUB_SHA
-          docker push $${ secrets.MASA_AWS_ACCT_ID }}$ECR_REPO/$DOCKER_IMAGE:latest:$GITHUB_SHA
+          docker tag $DOCKER_IMAGE:latest $${{ secrets.MASA_AWS_ACCT_ID }}$ECR_REPO/$DOCKER_IMAGE:latest
+          docker push $${{ secrets.MASA_AWS_ACCT_ID }}$ECR_REPO/$DOCKER_IMAGE:latest
