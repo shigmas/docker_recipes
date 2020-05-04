@@ -1,0 +1,49 @@
+FROM ubuntu:18.04
+
+ENV POKY_RELEASE zeus
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# The yocto manual specifies these.After xterm is what I added
+RUN apt-get update && apt-get install -y gawk wget git-core \
+    diffstat unzip texinfo gcc-multilib build-essential \
+    chrpath socat cpio python3 python3-distutils python3-pip python3-pexpect \
+    xz-utils debianutils iputils-ping python3-git python3-jinja2 libegl1-mesa \
+    libsdl1.2-dev pylint3 xterm libsdl1.2-dev tar locales  vim libncurses5-dev
+
+RUN locale-gen en_US.UTF-8 && update-locale LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LC_ALL en_US.UTF-8
+
+# the symlink seems hacky, but dpkg-reconfigure doesn't seem to be working. So, the hack
+# is is.
+#RUN dpkg-reconfigure dash
+RUN rm /bin/sh && ln -s bash /bin/sh
+
+WORKDIR /opt/yoctoproject
+
+COPY yocto/scripts/* ./
+
+RUN git clone -b $POKY_RELEASE git://git.yoctoproject.org/poky.git poky-$POKY_RELEASE
+WORKDIR /opt/yoctoproject/poky-$POKY_RELEASE
+RUN git clone -b $POKY_RELEASE git://git.openembedded.org/meta-openembedded
+RUN git clone -b $POKY_RELEASE https://github.com/meta-qt5/meta-qt5
+RUN git clone -b $POKY_RELEASE git://git.yoctoproject.org/meta-raspberrypi
+RUN git clone -b $POKY_RELEASE git://git.yoctoproject.org/meta-security.git
+
+# Base confs
+COPY yocto/rpi64/confs/local.conf /opt/build/rpi64/conf/
+COPY yocto/rpi64/confs/bblayers.conf /opt/build/rpi64/conf/
+RUN mkdir -p /opt/build/rpi64/meta-rpiqt5/conf
+# Layer confs
+COPY yocto/rpi64/layer-confs/layer.conf /opt/rpi64/meta-rpiqt5/conf/layer.conf
+COPY yocto/rpi64/layer-confs/bblayers.conf /opt/rpi64/meta-rpiqt5/conf/layer.conf
+RUN mkdir -p /opt/build/rpi64/meta-rpiqt5/recipes-core/image/
+COPY yocto/rpi64/layer-confs/rpi64-qt5-image.bb /opt/rpi64/meta-rpiqt5/recipes-core/image/
+#RUN mkdir -p /opt/build/rpi64/meta-rpiqt5/recipes-ext
+#COPY yocto/rpi64/layer-confs/qtbase_git.bbappend /opt/rpi64/meta-rpiqt5/recipes-ext/
+
+# This should not be run as root. So, something like:
+# docker run -v /opt/yoctoproject:/opt/yoctoproject -v /opt/build:/opt/build --user `id -u` yocto.sato
+CMD cp -r /opt/rpi64 /opt/build/rpi64 && source /opt/yoctoproject/poky-zeus/oe-init-build-env /opt/build/rpi64 && bitbake rpi64-qt5-image
