@@ -2,7 +2,8 @@
 include recipes-core/images/rpi-basic-image.bb
 # This image is a little more full featured, and includes wifi
 # support, provided you have a raspberrypi3
-inherit linux-raspberrypi-base
+inherit sdcard_image-rpi
+
 SUMMARY = "The minimal image that can run Qt5 applications"
 LICENSE = "MIT"
 MY_TOOLS = " \
@@ -46,5 +47,4 @@ IMAGE_INSTALL_append = " \
     ${MY_TOOLS} \
     ${MY_PKGS} \
     ${MY_FEATURES} \
-    basicquick \
 "
