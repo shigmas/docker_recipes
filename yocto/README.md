@@ -38,6 +38,10 @@ As you can see, it uses /opt/build. It is simpler in that you will put the artif
 
 You will get some warnings, since some things were created in the docker build as root:
 WARNING: linux-raspberrypi-1_4.19.93+gitAUTOINC+3fdcc814c5-r0 do_package_qa: QA Issue: linux-raspberrypi: /lib/modules/4.19.93/kernel/drivers/pps/clients/pps-ldisc.ko is owned by gid 0, which is the same as the user running bitbake. This may be due to host contamination [host-user-contaminated]
-I think this should be harmless.
+This should be addressed, but it's not a huge priority.
+
+qtwebkit fails. Tried this:
+https://stackoverflow.com/questions/40258161/how-do-i-get-qt-sdk-configured-properly-with-yocto-project
+but no success
 
 The main point of this, though, is to have a cross-compiling toolchain with Qt5 to run on the Rapsberry Pi.
