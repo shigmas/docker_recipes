@@ -129,9 +129,9 @@ e2label $DEST_RECOVERYFS_LOOP recoveryfs
 tune2fs $DEST_ROOTFS_LOOP -U ${UUIDROOTFS}
 
 # Perform any fixes due to block size
-#e2fsck -f $DEST_ROOTFS_LOOP
+e2fsck -f -y $DEST_ROOTFS_LOOP
 #resize2fs $DEST_ROOTFS_LOOP
-#e2fsck -f $DEST_RECOVERYFS_LOOP
+e2fsck -f -y $DEST_RECOVERYFS_LOOP
 #resize2fs $DEST_RECOVERYFS_LOOP
 
 # Delete the loopbacks and start over with our new image
@@ -178,19 +178,21 @@ sed -i "s/init=\/usr\/lib\/raspi-config\/init_resize.sh//"  $DUAL_BOOT/cmdline.t
 # Create new fstabs, since we need to add a new partition
 # XXX - we need to do this more strategically, since we've already modified these.
 
-mkdir $DUAL_ROOTFS/recovery
+# Putting directories into / breaks on boot. But we have /mnt
+RECOVERY_MOUNT=/mnt/recovery
+mkdir $DUAL_ROOTFS/$RECOVERY_MOUNT
 cat << EOF > $DUAL_ROOTFS/etc/fstab
 proc                     /proc  proc    defaults          0       0
 PARTUUID=${PARTUUID}-01  /boot  vfat    defaults          0       2
 PARTUUID=${PARTUUID}-02  /      ext4    defaults,noatime  0       1
-PARTUUID=${PARTUUID}-03  /recovery      ext4    defaults,noatime  0       1
+PARTUUID=${PARTUUID}-03  $RECOVERY_MOUNT      ext4    defaults,noatime  0       2
 EOF
 
-mkdir $DUAL_RECOVERYFS/recovery
+mkdir $DUAL_RECOVERYFS/$RECOVERY_MOUNT
 cat << EOF > $DUAL_RECOVERYFS/etc/fstab
 proc                     /proc  proc    defaults          0       0
 PARTUUID=${PARTUUID}-01  /boot  vfat    defaults          0       2
-PARTUUID=${PARTUUID}-02  /recovery      ext4    defaults,noatime  0       1
+PARTUUID=${PARTUUID}-02  $RECOVERY_MOUNT      ext4    defaults,noatime  0       2
 PARTUUID=${PARTUUID}-03  /      ext4    defaults,noatime  0       1
 EOF
 
