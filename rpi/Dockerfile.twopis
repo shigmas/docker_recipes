@@ -1,0 +1,12 @@
+# docker build -t rpi.twopis -f rpi/Dockerfile.twopis .
+
+FROM balenalib/armv7hf
+
+RUN apt-get update
+# these should be pulled from a file
+RUN apt-get install -y wget unzip vim uuid-runtime
+
+COPY rpi/scripts ./
+
+# docker run --privileged=true -v /dev:/dev -v /mnt/images:/mnt/images -e INPUT_IMAGE=/mnt/images/2020-02-13-raspbian-buster-lite.img rpi.twopis
+CMD [ "./dual-raspbian.sh" ]
