@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:experimental
+# docker build -t deb.repo -f debian/Dockerfile.repo --build-arg GPG_PASSPHRASE="TayTayFolklore" --build-arg GPG_PUB_KEY=./futomen_repo_pub.gpg --build-arg GPG_PRIV_KEY=./futomen_repo_sec.gpg .
+#
+# This file and the prep-repo.sh script don't handle populating the package hierarchy. I think a
+# docker volume done separately is the best way. The entire package repository is mounted
+# and can be updated by another container. It's prepped here, but all packages can be
+# maintained through another container.
+FROM ubuntu:latest
+ARG PROJECT=futomen
+ARG GPG_PUB_KEY
+ARG GPG_PRIV_KEY
+ARG GPG_PASSPHRASE
+
+
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=Asia/Japan \
+    apt-get install -y apt-utils gpg gnupg2 reprepro apache2 dpkg-sig
+
+WORKDIR /var/repo
+
+# Only do this once, when we create the image.
+COPY debian/scripts/* ./
+COPY ${GPG_PUB_KEY} ./
+COPY ${GPG_PRIV_KEY} ./
+RUN ./prep-repo.sh
+
+# expose apache for the 
+EXPOSE 80/tcp
+
+# docker run --rm -it -v repo_vol:/mnt/images deb.repo /bin/bash
+# docker run --publish 127.0.0.1:80:80 deb.repo
+CMD /usr/sbin/apachectl -D FOREGROUND
