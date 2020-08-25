@@ -1,0 +1,24 @@
+# syntax=docker/dockerfile:experimental
+
+#FROM balenalib/armv7hf-debian-golang:1.14.4
+FROM balenalib/intel-nuc-debian-golang:1.14.4
+FROM ubuntu:latest
+
+
+ARG RELEASE=development
+ARG PKG_NAME=development
+ARG DEB_ARCH=amd64
+
+#RUN [ "cross-build-start" ]
+
+ENV GOOS $GOARCH
+ENV GOARCH $GOARCH
+ENV GOARM $GOARM
+
+RUN apt-get update -qq && \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=Asia/Japan \
+    apt-get install -y build-essential devscripts debhelper dh-make
+
+
+# docker run --rm -it --privileged=true -v /dev:/dev -v /mnt/images:/mnt/images pardek.repo /bin/bash

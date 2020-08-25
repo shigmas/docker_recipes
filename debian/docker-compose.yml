@@ -1,0 +1,7 @@
+version: "3.8"
+services:
+  repository:
+    build: app
+    image: 331226812135.dkr.ecr.us-west-2.amazonaws.com/debianrepo
+    ports:
+      - "80:80"
