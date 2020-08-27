@@ -1,0 +1,36 @@
+FROM ubuntu:latest
+
+# Create the image, which will build a tar file
+# (see the run at the end to get the tar file from the image)
+# docker build -t go.generics -f Dockerfile.generics .
+#
+# From https://blog.golang.org/generics-next-step:
+# Install go from source
+# "Bootstrap toolchain from binary release"
+# https://golang.org/doc/install/source
+RUN apt-get update && apt-get install -y git build-essential wget
+
+# The current draft:
+# https://go.googlesource.com/proposal/+/refs/heads/master/design/go2draft-type-parameters.md
+
+
+ENV GOROOT_BOOTSTRAP /opt/goboot/go
+WORKDIR /opt/goboot
+RUN wget https://golang.org/dl/go1.15.linux-amd64.tar.gz
+RUN tar xvfz go1.15.linux-amd64.tar.gz
+
+ENV GOROOT_GENERICS /opt/gogenerics
+WORKDIR $GOROOT_GENERICS
+RUN git clone https://go.googlesource.com/go goroot
+WORKDIR $GOROOT_GENERICS/goroot
+RUN git checkout dev.go2go
+WORKDIR $GOROOT_GENERICS/goroot/src
+RUN ./all.bash
+WORKDIR $GOROOT_GENERICS/goroot
+RUN rm -rf .git pkg/obj/go-build
+WORKDIR $GOROOT_GENERICS
+RUN tar cfz go-generics.tar.gz goroot
+
+# Get the tar file:
+# docker run -v `pwd`:/output go.generics
+CMD cp $GOROOT_GENERICS/go-generics.tar.gz /output
