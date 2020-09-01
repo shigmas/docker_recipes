@@ -13,6 +13,7 @@
 #  - (optional) new size of the partition. 0 is to copy as it is. This could
 #    increase or decrease. It is up to the user to make sure it is not deleting
 #    data when decreasing. Obviously, the host must have sufficient disk space.
+#    The size is in sectors (The value will be used as the size of the partition).
 # ./copy_parts.sh /dev/blah 3 0
 #
 # Things I've hacked because I don't know how to do it otherwise.
@@ -81,6 +82,16 @@ get_id_for_type() {
     else
         echo "Unknown partition scheme"
         exit -1
+    fi
+}
+
+is_linux_id() {
+    part_id=$1
+
+    if [ $part_type = "Linu" ] || [ $part_type = "Linux_" ] || [ $part_type = "Linux_filesystem" ] ; then
+        echo 1
+    else
+        echo 0
     fi
 }
 
@@ -217,12 +228,11 @@ create_empty_image_file() {
     done
 
     FOUR_MB=$(($((1024 * 1024)) * 4))
-    echo "Writing out $total sectors to $image_file"
     if [ $last_size -gt 0 ] ; then
         # We seem to need a little padding
         last_size=$(($last_size + $FOUR_MB))
         dest_size=$(($((512 * $last_size)) / $FOUR_MB))
-        echo "Writing out $dest_size sectors to $image_file"
+        echo "Writing out blank image  $dest_size blocks ($FOUR_MB) to $image_file"
         dd if=/dev/zero of=$image_file bs=4M count=$dest_size
     else
         echo Unable to get last size. Fatal
@@ -270,8 +280,7 @@ part_loops=$(loop_parts $SOURCE_IMAGE $part_info)
 new_part_loops=$(loop_parts $DEST_IMAGE $new_part_info)
 #echo "Dest Partitions and their loopbacks: $new_part_loop"
 
-# Handling two "arrays" makes using a function difficult
-
+# Handling two "arrays" makes using a function difficult, so this is in the main script
 dd_index=0
 for old_part in $part_loops ; do
     part_offset=$(echo $old_part | cut -d'|' -f1)
@@ -288,7 +297,7 @@ for old_part in $part_loops ; do
     new_part_loop=$(echo $new_part | cut -d'|' -f4)
 
     echo "copying $part_sectors sectors from $part_loop to $new_part_loop"
-    dd if=$part_loop of=$new_part_loop bs=4M count=$part_sectors
+    dd if=$part_loop of=$new_part_loop bs=4M count=$new_part_sectors
 
     inc=1
     if [ $COPY_PART_FLAG -ne 0 ] ; then
@@ -297,8 +306,14 @@ for old_part in $part_loops ; do
         fi
     fi
     dd_index=$(($dd_index + $inc))
+    is_linux_id=$(is_linux_id $new_part_type)
+    if [ $is_linux_id -eq 1 ] ; then
+        e2fsck -f -y $new_part_loop
+    fi
 
 done
 
 remove_loops $part_loops
 remove_loops $new_part_loops
+
+sync
