@@ -1,5 +1,7 @@
 #!/bin/sh
 
+. ./part_common.sh --source-only
+
 # Example:
 # sudo ./copy_parts.sh /dev/sda ubuntu.img 3 1 0
 # Image copier. This will copy an image from a device or image file to an image
@@ -85,79 +87,6 @@ get_id_for_type() {
     fi
 }
 
-is_linux_id() {
-    part_id=$1
-
-    if [ $part_type = "Linu" ] || [ $part_type = "Linux_" ] || [ $part_type = "Linux_filesystem" ] ; then
-        echo 1
-    else
-        echo 0
-    fi
-}
-
-get_image_info() {
-    image_dev=$1
-    image_key=$2
-
-    sfdisk -d $image_dev | {
-        while read LINE; do
-            case $LINE in
-                $image_key*)
-                    echo $LINE | awk '{print $2}'
-                    break
-                    ;;
-            esac
-        done
-    }
-}
-
-# echo the partition information in the format:
-# partition | offset | size
-# XXX - we should also get the block size, but I haven't seen it be anything other than 512.
-#BLOCK_SIZE=512
-get_part_off_size_type() {
-    d_dev=$1
-    # The columns are different for different kinds of images. e.g. the raspberry pi
-    # image shows the type Id, but the ubuntu one does not. Use -o which takes a
-    # "list" of columns. But how the heck do you specify columns?
-    sfdisk -l $d_dev | {
-        inParts=0
-        disk_label_type=''
-        while read LINE; do
-            #echo $LINE
-            case $LINE in
-                Disklabel*)
-                    # Ideally, since this is what get_image_info would do, we'd reuse
-                    # that, but since sfdisk | is running in a subprocess, it's tricky
-                    # passing information around with anything other than echo, so we'll
-                    # just use it here
-                    disk_label_type=`echo $LINE | awk '{print $3}'`
-                    ;;
-                Device*)
-                    inParts=1
-                    ;;
-                $d_dev*)
-                    if [ $inParts -eq 1 ] ; then
-                        # For the type, it may be more than 2 words, but it's enough
-                        # for us to look it up later... If it's a problem, we can
-                        # iterate it and just grab the end for the type
-                        # dos: MBR lists type
-                        # gpt: GUID Partition Table omits it
-                        if [ $disk_label_type = "dos" ]; then
-                            echo $LINE | awk '{print $2"|"$4"|"$7"_"$8}'
-                        elif [ $disk_label_type = "gpt" ]; then
-                            echo $LINE | awk '{print $2"|"$4"|"$6"_"$7}'
-                        else
-                            echo unrecognized disk label: $disk_label_type
-                            return
-                        fi
-                    fi
-                    ;;
-            esac
-        done
-    }
-}
-
 create_new_part_map() {
     p_index=$1
     shift
@@ -210,6 +139,7 @@ create_empty_image_file() {
     partition_file=/tmp/$image_file.part
 
     label_id=$(tr -dc 'a-f0-9' < /dev/urandom 2>/dev/null | head -c8)
+    
     echo "Write the partition map to $partition_file"
     # First one is > to create it, >> to append
     echo "label: $image_label" > $partition_file
@@ -306,8 +236,8 @@ for old_part in $part_loops ; do
         fi
     fi
     dd_index=$(($dd_index + $inc))
-    is_linux_id=$(is_linux_id $new_part_type)
-    if [ $is_linux_id -eq 1 ] ; then
+    is_linux=$(is_linux_type $new_part_type)
+    if [ $is_linux -eq 1 ] ; then
         e2fsck -f -y $new_part_loop
     fi
 
