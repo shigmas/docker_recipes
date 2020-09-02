@@ -30,7 +30,7 @@ fi
 SOURCE_IMAGE=$1
 DEST_IMAGE=$2
 
-TMP_MOUNT_POINT=/tmp/updater_mount
+TMP_MOUNT_POINT=/mnt/updater_mount
 
 label_id=$(get_image_info $SOURCE_IMAGE label-id)
 # Strip the leading 0x
@@ -71,7 +71,7 @@ for part in $part_info ; do
     if [ $is_linux -eq 1 ] ; then
         update_root_partition $orig_label_id $dest_label_id
     else
-         update_boot_partition $orig_label_id $dest_label_id
+        update_boot_partition $orig_label_id $dest_label_id
     fi
     umount $TMP_MOUNT_POINT
 done

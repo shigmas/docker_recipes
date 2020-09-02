@@ -48,6 +48,8 @@ if [ "$#" -gt 4 ]; then
     PART_NEW_SIZE=$5
 fi
 
+FOUR_MB=$(($((1024 * 1024)) * 4))
+
 get_id_for_type() {
     image_label=$1
     part_type=$2
@@ -64,7 +66,7 @@ get_id_for_type() {
         elif [ $part_type = "Linu" ] || [ $part_type = "Linux_" ] || [ $part_type = "Linux_filesystem" ] ; then
             echo "83"
         else
-            echo "Failed to get partition type"
+            echo "Failed to get partition type for $image_label"
             exit -1
         fi
     elif [ $image_label = "gpt" ] ; then
@@ -78,7 +80,7 @@ get_id_for_type() {
         elif [ $part_type = "Linu" ] || [ $part_type = "Linux_" ] || [ $part_type = "Linux_filesystem" ] ; then
             echo "0FC63DAF-8483-4772-8E79-3D69D8477DE4"
         else
-            echo "Failed to get partition type"
+            echo "Failed to get partition type for $image_label"
             exit -1
         fi
     else
@@ -157,10 +159,9 @@ create_empty_image_file() {
         last_size=$(($part_offset + $part_sectors))
     done
 
-    FOUR_MB=$(($((1024 * 1024)) * 4))
     if [ $last_size -gt 0 ] ; then
         # We seem to need a little padding
-        last_size=$(($last_size + $FOUR_MB))
+        #last_size=$(($last_size + $FOUR_MB))
         dest_size=$(($((512 * $last_size)) / $FOUR_MB))
         echo "Writing out blank image  $dest_size blocks ($FOUR_MB) to $image_file"
         dd if=/dev/zero of=$image_file bs=4M count=$dest_size
@@ -227,7 +228,8 @@ for old_part in $part_loops ; do
     new_part_loop=$(echo $new_part | cut -d'|' -f4)
 
     echo "copying $part_sectors sectors from $part_loop to $new_part_loop"
-    dd if=$part_loop of=$new_part_loop bs=4M count=$new_part_sectors
+    part_size=$(($((512 * $new_part_sectors)) / $FOUR_MB))
+    dd if=$part_loop of=$new_part_loop bs=4M count=$part_size
 
     inc=1
     if [ $COPY_PART_FLAG -ne 0 ] ; then
@@ -239,6 +241,7 @@ for old_part in $part_loops ; do
     is_linux=$(is_linux_type $new_part_type)
     if [ $is_linux -eq 1 ] ; then
         e2fsck -f -y $new_part_loop
+        resize2fs $new_part_loop
     fi
 
 done
