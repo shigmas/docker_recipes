@@ -141,7 +141,7 @@ create_empty_image_file() {
     partition_file=/tmp/$image_file.part
 
     label_id=$(tr -dc 'a-f0-9' < /dev/urandom 2>/dev/null | head -c8)
-    
+
     echo "Write the partition map to $partition_file"
     # First one is > to create it, >> to append
     echo "label: $image_label" > $partition_file
@@ -162,7 +162,8 @@ create_empty_image_file() {
     if [ $last_size -gt 0 ] ; then
         # We seem to need a little padding
         #last_size=$(($last_size + $FOUR_MB))
-        dest_size=$(($((512 * $last_size)) / $FOUR_MB))
+        # gpt is quite picky. So, create one more block of space
+        dest_size=$(($(($((512 * $last_size)) + $FOUR_MB)) / $FOUR_MB))
         echo "Writing out blank image  $dest_size blocks ($FOUR_MB) to $image_file"
         dd if=/dev/zero of=$image_file bs=4M count=$dest_size
     else
@@ -206,10 +207,10 @@ echo $new_part_info
 create_empty_image_file $DEST_IMAGE $image_label $new_part_info
 
 part_loops=$(loop_parts $SOURCE_IMAGE $part_info)
-#echo "Source Partitions and their loopbacks: $part_loop"
+echo "Source Partitions and their loopbacks: $part_loop"
 
 new_part_loops=$(loop_parts $DEST_IMAGE $new_part_info)
-#echo "Dest Partitions and their loopbacks: $new_part_loop"
+echo "Dest Partitions and their loopbacks: $new_part_loop"
 
 # Handling two "arrays" makes using a function difficult, so this is in the main script
 dd_index=0
