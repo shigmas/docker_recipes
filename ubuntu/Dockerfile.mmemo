@@ -1,0 +1,14 @@
+FROM ubuntu:latest
+
+# As always, update
+ENV UBUNTU_PACKAGES nginx
+ENV DVAR default
+
+RUN apt-get update && apt-get install -y  python3 python3-pip sqlite3
+
+COPY ./Mnemosyne-2.7.3.tar.gz .
+COPY ./scripts/install-mnemosyne.sh .
+
+RUN ./install-mnemosyne.sh
+
+CMD /usr/local/bin/mnemosyne --sync-server --web-server -d /mnemosyne-data
