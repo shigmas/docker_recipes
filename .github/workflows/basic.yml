@@ -5,10 +5,14 @@ on:
   pull_request:
     branches: [ '*' ]
 
+
 jobs:
   basic_build:
     runs-on: ubuntu-18.04
     name: build_image
+    env:
+      ECR_REPO: .dkr.ecr.us-east-2.amazonaws.com
+      DOCKER_IMAGE: ubuntu.basic
     steps:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -16,16 +20,18 @@ jobs:
           aws-access-key-id: ${{ secrets.MASA_AWS_KEY }}
           aws-secret-access-key: ${{ secrets.MASA_AWS_SECRET }}
           aws-region: us-east-2
-      - name: Fetch Base Image
-        run: |
-          aws s3 cp s3://ear-collection/test.txt .
-          cat test.txt
       - name: Check out code
         uses: actions/checkout@v2
       - name: Build Image
         run: |
-          docker build -t gateway_build -f arm/Dockerfile .
-      - name: Run Image
+          docker build -t $DOCKER_IMAGE -f ubuntu/Dockerfile.basic .
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Push to ECR
+        env:
+          LATEST_IMAGE: $DOCKER_IMAGE:latest
         run: |
-          docker run --rm --privileged multiarch/qemu-user-static:register --reset
-          docker run --privileged  gateway_build
+          docker tag $DOCKER_IMAGE:latest $${{ secrets.MASA_AWS_ACCT_ID }}$ECR_REPO/$DOCKER_IMAGE:latest
+          docker push $${{ secrets.MASA_AWS_ACCT_ID }}$ECR_REPO/$DOCKER_IMAGE:latest

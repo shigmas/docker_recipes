@@ -1,0 +1,7 @@
+FROM ubuntu:latest
+
+RUN echo "Asia/Tokyo" > /etc/timezone
+
+RUN apt-get update && apt-get install -y tzdata
+RUN dpkg-reconfigure -f noninteractive tzdata
+RUN apt-get update && apt-get install -y golang git
