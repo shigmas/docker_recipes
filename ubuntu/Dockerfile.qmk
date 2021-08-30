@@ -1,0 +1,18 @@
+FROM ubuntu:18.04
+
+# As always, update
+
+RUN apt-get update && apt-get install -y  python3.7 python3-pip build-essential avrdude dfu-programmer avr-libc gcc-avr  git gcc-arm-none-eabi libhidapi-hidraw0 libhidapi-hidraw0 dfu-util
+
+WORKDIR /opt/qmk/qmk_firmware
+RUN python3.7 -m pip install qmk
+
+# Use this to clone qmk, but you will have to do it on the RUN stage
+RUN qmk setup -y
+
+# No CMD. You will need do docker run with the firmware
+
+
+# docker run --privileged=true -v /dev:/dev qmk
+# docker run --rm -it --privileged=true -v /dev:/dev qmk /bin/bash
+
