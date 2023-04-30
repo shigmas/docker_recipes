@@ -7,7 +7,7 @@ on:
 
 jobs:
   basic_build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     name: build_image
     steps:
       - name: Configure AWS Credentials
