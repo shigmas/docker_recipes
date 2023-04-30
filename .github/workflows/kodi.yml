@@ -7,7 +7,7 @@ on:
 
 jobs:
   basic_build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     name: build_image
     env:
       RASPBIAN_VERSION: 2020-02-13-raspbian-buster-lite
@@ -15,7 +15,7 @@ jobs:
       DEST_SIZE: 7678
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.MASA_AWS_KEY }}
           aws-secret-access-key: ${{ secrets.MASA_AWS_SECRET }}
