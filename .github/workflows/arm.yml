@@ -21,7 +21,7 @@ jobs:
         uses: uraimo/run-on-arch-action@v1.0.8
         with:
           architecture: armv7
-          distribution: ubuntu22.04
+          distribution: ubuntu20.04
           run: |
             uname -a
             apt-get update && apt-get install -y wget
