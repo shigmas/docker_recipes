@@ -18,7 +18,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
       - name: Setup ARM base
-        uses: uraimo/run-on-arch-action@v1.0.8
+        uses: uraimo/run-on-arch-action@v2
         with:
           architecture: armv7
           distribution: ubuntu20.04
