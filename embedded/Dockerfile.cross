@@ -1,0 +1,55 @@
+FROM ubuntu:22.04
+
+ARG TOOLCHAIN
+ARG CROSSTOOL_VERSION=crosstool-nb-1.25.0
+
+ENV TOOLCHAIN=$TOOLCHAIN
+ENV CROSSTOOL_VERSION=$CROSSTOOL_VERSION
+
+
+# libssl-dev is needed for u-boot. (Should have put it on the next line)
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y autoconf automake bison bzip2 cmake flex g++ gawk gcc gettext \
+    git gperf help2man libncurses5-dev libstdc++6 libtool libtool-bin make patch \
+    python3-dev rsync texinfo unzip wget xz-utils
+# vim is helpful. u-boot uses bc
+RUN DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y sudo vim libssl-dev bc
+
+#RUN apt-get install -y u-boot-tools
+RUN useradd -ms /bin/bash cross
+USER cross
+
+WORKDIR /build
+
+# These are patch files created from previous runs. Run:
+# in the container, run:
+# 1. bin/ct-ng "$TOOLCHAIN"
+# 2. cp .config .config.def
+# 3. bin/ct-ng menuconfig
+# 4. make the changes
+# 5. diff -u .config.def .config
+# on the host, 
+# 1. docker container cp fa53df95ec1f:/build/crosstool-ng/patch custom/$TOOLCHAIN.config.patch
+ADD custom/* custom/
+
+# clone and build crosstool
+RUN git clone https://github.com/crosstool-ng/crosstool-ng.git
+WORKDIR crosstool-ng
+RUN echo using version "$CROSSTOOL_VERSION"
+RUN git checkout "$CROSSTOOL_VERSION"
+RUN ./bootstrap && ./configure --prefix=${PWD}
+RUN make && make install
+
+# Now, run crosstool
+RUN bin/ct-ng "$TOOLCHAIN"
+RUN patch .config < ../custom/"$TOOLCHAIN".config.patch
+
+# Now, finally, build the toolchain
+RUN bin/ct-ng build
+
+# Not exactly sure why "hf" gets appended. And think adding that is not going to always be the
+# case. But, for now, hardcode it.
+# Also, use full path, not ~ because make will fail in the uboot build.
+ENV PATH=/home/cross/x-tools/"$TOOLCHAIN"hf/bin:$PATH

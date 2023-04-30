@@ -1,0 +1,22 @@
+FROM crosstool.001
+
+ARG UBOOT_RELEASE=v2022.04
+ARG BB_PATCH=v2022.04-bbb.io-am335x-am57xx
+ARG TARGET=am335x_evm_defconfig
+
+ENV UBOOT_RELEASE=$UBOOT_RELEASE
+ENV BB_PATCH=$BB_PATCH
+ENV TARGET=$TARGET
+ENV TOOLCHAIN="$TOOLCHAIN"hf-
+
+WORKDIR /build
+RUN git clone https://source.denx.de/u-boot/u-boot.git
+WORKDIR /build/u-boot
+RUN git checkout "$UBOOT_RELEASE"
+
+# get the BB patch
+RUN git pull --no-edit https://git.beagleboard.org/beagleboard/u-boot.git "$BB_PATCH"
+
+RUN make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" distclean
+RUN make ARCH=arm CROSS_COMPILE="$TOOLCHAIN" "$TARGET"
+RUN make ARCH=arm CROSS_COMPILE="$TOOLCHAIN"
