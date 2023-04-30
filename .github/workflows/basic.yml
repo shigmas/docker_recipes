@@ -11,11 +11,11 @@ jobs:
     name: build_image
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.MASA_AWS_KEY }}
           aws-secret-access-key: ${{ secrets.MASA_AWS_SECRET }}
-          aws-region: us-east-2
+          aws-region: us-west-2
       - name: Fetch Base Image
         run: |
           aws s3 cp s3://ear-collection/test.txt .
