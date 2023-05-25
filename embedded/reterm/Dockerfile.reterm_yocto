@@ -1,0 +1,30 @@
+FROM ubuntu:22.04
+
+# libssl-dev is needed for u-boot. (Should have put it on the next line)
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y git build-essential vim sudo file cpio unzip rsync bc
+
+RUN apt-get install -y wget libncurses-dev gawk diffstat texinfo gcc-multilib chrpath socat python3-distutils
+RUN useradd -ms /bin/bash seeed
+USER seeed
+
+WORKDIR /build
+
+WORKDIR /build/reterminal-yocto/layers
+RUN git clone -b dunfell git://git.yoctoproject.org/poky
+RUN git clone -b dunfell https://github.com/Seeed-Studio/meta-seeed-cm4.git
+RUN git clone -b master git://git.yoctoproject.org/meta-raspberrypi
+RUN git clone -b dunfell https://github.com/meta-qt5/meta-qt5.git
+RUN git clone -b dunfell https://github.com/openembedded/meta-openembedded.git
+WORKDIR /build/reterminal-yocto/layers/meta-raspberrypi/
+RUN cp -r recipes-kernel/linux/ ../
+RUN git checkout dunfell
+RUN rm -r recipes-kernel/linux/
+RUN mv -f ../linux/ recipes-kernel/
+WORKDIR /build/reterminal-yocto/
+RUN bitbake-layers add-layer ../layers/meta-raspberrypi
+RUN bitbake-layers add-layer ../layers/meta-seeed-cm4
+RUN bitbake-layers add-layer ../layers/meta-qt5
+RUN bitbake-layers add-layer ../layers/meta-openembedded/meta-oe
+RUN bitbake-layers add-layer ../layers/meta-openembedded/meta-python
