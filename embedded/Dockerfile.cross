@@ -47,10 +47,10 @@ RUN bin/ct-ng "$TOOLCHAIN"
 # 4. cp output/* custom/ (you can cut & paste that, or use command line completion,
 #    since the $TOOLCHAIN variable isn't available at that point)
 # (Although, it would be good to just skip the patch if it doesn't exist)
-#RUN patch .config < ../custom/"$TOOLCHAIN".config.patch
+RUN patch .config < ../custom/"$TOOLCHAIN".config.patch
 
 # Now, finally, build the toolchain
-#RUN bin/ct-ng build
+RUN bin/ct-ng build
 
 # Not exactly sure why "hf" gets appended. And think adding that is not going to always be the
 # case. But, for now, hardcode it.
