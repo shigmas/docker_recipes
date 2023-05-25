@@ -1,4 +1,3 @@
-UBOOT_IMAGE_VERSION=uboot.001
 KERNEL_IMAGE_VERSION=kernel.001
 
 ifeq ($(TARGET),bbb)
@@ -19,32 +18,44 @@ ifndef CROSSTOOL_VERSION
 	CROSSTOOL_VERSION=a8cef57
 endif
 
-build_toolchain_image:
+help:
+	@printf "Builder for embedded systems.\n"
+	@printf "There are three targets:\n"
+	@printf "bbb: BeagleBone Black (or compatible)\n"
+	@printf "qemu: Generic ARM for testing/verification\n"
+	@printf "rpi: Raspberry Pi 4 (Basically, we set the kernel from the\n"
+	@printf "     raspberry pi 3 template\n\n"
+	@printf "Toolchain: First, you need to build a toolchain. The generic\n"
+	@printf "Dockerfile will build for all three with the provided files in\n"
+	@printf "the custom directory. There are some other options which you\n"
+	@printf "can find in Dockerfile.cross. (I had problems with the release\n"
+	@printf "so it uses a recent, working commit. You can try newer ones)\n"
+	@printf "U-boot: For bbb and qemu, you can build a U-boot bootloader\n"
+	@printf "Dockerfile will build for all three with the provided files in\n"
+	@printf "the custom directory.\n"
+
+toolchain_check:
 ifndef TOOLCHAIN
 	@printf "Could not find TOOLCHAIN for TARGET\n"
-	exit
+	exit 1
 endif
+
+build_toolchain_image: toolchain_check
 	DOCKER_BUILDKIT=1 docker build -t crosstool.$(TOOLCHAIN) --build-arg TOOLCHAIN=$(TOOLCHAIN) --build-arg CROSSTOOL_VERSION=$(CROSSTOOL_VERSION) -f Dockerfile.cross .
 
-run_toolchain_image:
-	docker run -it -v $(PWD)/output:/output crosstool.$(TOOLCHAIN) /bin/bash
+# Convenience target for creating the patch file.
+run_toolchain_image: toolchain_check
+	docker run --rm -it -v $(PWD)/output:/output crosstool.$(TOOLCHAIN) /bin/bash
 
-build_uboot_image:
-ifndef TOOLCHAIN
-	@printf "TOOLCHAIN required\n"
-	false
-endif
-	DOCKER_BUILDKIT=1 docker build -t $(UBOOT_IMAGE_VERSION) --build-arg TOOLCHAIN=$(TOOLCHAIN) --build-arg UBOOT_VERSION=$(UBOOT_VERSION) -f Dockerfile.uboot .
+build_uboot_image: toolchain_check
+	DOCKER_BUILDKIT=1 docker build -t uboot.$(TOOLCHAIN) --build-arg TOOLCHAIN=$(TOOLCHAIN) --build-arg UBOOT_RELEASE=$(UBOOT_RELEASE) -f Dockerfile.uboot_$(TARGET) .
 
-run_uboot_image:
-	docker run -it -v $(PWD)/output:/output $(UBOOT_IMAGE_VERSION) /bin/bash
+# Convenience for getting the artifacts
+run_uboot_image: toolchain_check
+	docker run --rm -it -v $(PWD)/output:/output $(UBOOT_IMAGE_VERSION) /bin/bash
 
-build_kernel_image:
-ifndef TOOLCHAIN
-	@printf "TOOLCHAIN required\n"
-	false
-endif
-	DOCKER_BUILDKIT=1 docker build -t $(KERNEL_IMAGE_VERSION) --build-arg TOOLCHAIN=$(TOOLCHAIN) -f Dockerfile.kernel .
+build_kernel_image: toolchain_check
+	DOCKER_BUILDKIT=1 docker build -t $(KERNEL_IMAGE_VERSION) --build-arg TOOLCHAIN=$(TOOLCHAIN) -f Dockerfile.kernel_$(TARGET) .
 
 run_kernel_image:
 	docker run -it -v $(PWD)/output:/output $(KERNEL_IMAGE_VERSION) /bin/bash

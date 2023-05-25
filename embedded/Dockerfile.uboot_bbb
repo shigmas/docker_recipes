@@ -1,4 +1,6 @@
-FROM crosstool.001
+# Should we rename the images to the TARGET (from the Makefile)? Pro: It makes
+# it more human readable. Con: ...?
+FROM crosstool.arm-cortex_a8-linux-gnueabi
 
 ARG UBOOT_RELEASE=v2022.04
 ARG BB_PATCH=v2022.04-bbb.io-am335x-am57xx
