@@ -1,0 +1,38 @@
+--- .config.def	2023-05-25 11:38:44.784166734 +0000
++++ .config	2023-05-25 11:39:59.030517092 +0000
+@@ -26,7 +26,7 @@
+ CT_CONFIGURE_has_sha512sum=y
+ CT_CONFIGURE_has_install_with_strip_program=y
+ CT_VERSION="1.25.0.184_a8cef57"
+-CT_VCHECK="load"
++CT_VCHECK=""
+ CT_CONFIG_VERSION_ENV="4"
+ CT_CONFIG_VERSION_CURRENT="4"
+ CT_CONFIG_VERSION="4"
+@@ -56,7 +56,7 @@
+ CT_RM_RF_PREFIX_DIR=y
+ CT_REMOVE_DOCS=y
+ CT_INSTALL_LICENSES=y
+-CT_PREFIX_DIR_RO=y
++# CT_PREFIX_DIR_RO is not set
+ CT_STRIP_HOST_TOOLCHAIN_EXECUTABLES=y
+ # CT_STRIP_TARGET_TOOLCHAIN_EXECUTABLES is not set
+ 
+@@ -142,7 +142,7 @@
+ # CT_ARCH_XTENSA is not set
+ CT_ARCH="arm"
+ CT_ARCH_CHOICE_KSYM="ARM"
+-CT_ARCH_CPU="cortex-a53"
++CT_ARCH_CPU="cortex-a72"
+ CT_ARCH_ARM_SHOW=y
+ 
+ #
+@@ -207,7 +207,7 @@
+ #
+ # Tuple completion and aliasing
+ #
+-CT_TARGET_VENDOR="rpi3"
++CT_TARGET_VENDOR="rpi4"
+ CT_TARGET_ALIAS_SED_EXPR=""
+ CT_TARGET_ALIAS=""
+ 

@@ -1,0 +1,28 @@
+FROM crosstool.001
+
+ARG KERNEL_VERSION=v6.x
+# will append .tar.xz
+ARG KERNEL_RELEASE=linux-6.3.3
+ARG KERNEL_CONFIG=""
+# This should probably set in cross, since it needs to match TOOLCHAIN
+ARG ARCH=arm
+
+ENV KERNEL_VERSION=$KERNEL_VERSION
+ENV KERNEL_RELEASE=$KERNEL_RELEASE
+ENV KERNEL_CONFIG=$KERNEL_CONFIG
+ENV ARCH=$ARCH
+ENV CROSS_COMPILE="$TOOLCHAIN"hf-
+
+WORKDIR /build/kernel
+RUN wget https://cdn.kernel.org/pub/linux/kernel/"$KERNEL_VERSION"/"$KERNEL_RELEASE".tar.xz
+RUN tar xf "$KERNEL_RELEASE".tar.xz
+RUN mv "$KERNEL_RELEASE" linux-stable
+WORKDIR /build/kernel/linux-stable
+
+# This needs to be done interactively, unless we already have a config
+COPY custom/"$KERNEL_CONFIG" .
+RUN make mrproper
+#RUN if [ ! -e "$KERNEL_CONFIG" ] ;      then make ARCH="$ARCH" defconfig && make ARCH="$ARCH" menuconfig ;    else      cp "$KERNEL_CONFIG" .config ; fi
+
+# hopefully, we have 4 cores.
+#RUN make -j 4 ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" zImage

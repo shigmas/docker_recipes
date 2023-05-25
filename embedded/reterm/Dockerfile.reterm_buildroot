@@ -1,0 +1,17 @@
+FROM ubuntu:22.04
+
+# libssl-dev is needed for u-boot. (Should have put it on the next line)
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y git build-essential vim sudo file cpio unzip rsync bc
+
+RUN apt-get install -y wget libncurses-dev
+RUN useradd -ms /bin/bash seeed
+USER seeed
+
+WORKDIR /build
+
+RUN git clone --depth=1 https://github.com/Seeed-Studio/seeed-linux-buildroot.git -b master
+WORKDIR /build/seeed-linux-buildroot
+RUN make reTerminal_64_defconfig
+#RUN make
