@@ -63,3 +63,5 @@ export_kernel_image: toolchain_check
 run_kernel_image:
 	docker run -it -v $(PWD)/output:/output kernel.$(TOOLCHAIN) /bin/bash
 
+run_qemu_kernel:
+	QEMU_AUDIO_DRV=none qemu-system-arm -m 256M -nographic -M versatilepb -kernel output/zImage.qemu -append "console=ttyAMA0,115200" -dtb output/versatile-pb.dtb

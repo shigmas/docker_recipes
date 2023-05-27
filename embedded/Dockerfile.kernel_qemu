@@ -35,4 +35,4 @@ RUN if [ -e "$KERNEL_CONFIG" ] ;  then patch .config < "$KERNEL_CONFIG" ; fi
 # aARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" are unnecessary when they're in the env
 RUN make -j 4 zImage && make -j 4 modules && make dtbs
 
-CMD sudo sh -c "cp arch/"$ARCH"/boot/zImage /output && cp arch/"$ARCH"/boot/dts/versatile-pb.dtb /output"
+CMD sudo sh -c "cp arch/"$ARCH"/boot/zImage /output/zImage.qemu && cp arch/"$ARCH"/boot/dts/versatile-pb.dtb /output"
