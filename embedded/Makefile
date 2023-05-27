@@ -48,15 +48,18 @@ run_toolchain_image: toolchain_check
 	docker run --rm -it -v $(PWD)/output:/output crosstool.$(TOOLCHAIN) /bin/bash
 
 build_uboot_image: toolchain_check
-	DOCKER_BUILDKIT=1 docker build -t uboot.$(TOOLCHAIN) --build-arg TOOLCHAIN=$(TOOLCHAIN) --build-arg UBOOT_RELEASE=$(UBOOT_RELEASE) -f Dockerfile.uboot_$(TARGET) .
+	DOCKER_BUILDKIT=1 docker build -t uboot.$(TOOLCHAIN) --build-arg TOOLCHAIN=$(TOOLCHAIN)  -f Dockerfile.uboot_$(TARGET) .
 
 # Convenience for getting the artifacts
 run_uboot_image: toolchain_check
-	docker run --rm -it -v $(PWD)/output:/output $(UBOOT_IMAGE_VERSION) /bin/bash
+	docker run --rm -it -v $(PWD)/output:/output uboot.$(TOOLCHAIN) /bin/bash
 
 build_kernel_image: toolchain_check
-	DOCKER_BUILDKIT=1 docker build -t $(KERNEL_IMAGE_VERSION) --build-arg TOOLCHAIN=$(TOOLCHAIN) -f Dockerfile.kernel_$(TARGET) .
+	DOCKER_BUILDKIT=1 docker build -t kernel.$(TOOLCHAIN) --build-arg KERNEL_CONFIG=$(TOOLCHAIN).kernel.patch --build-arg TOOLCHAIN=$(TOOLCHAIN) -f Dockerfile.kernel_$(TARGET) .
+
+export_kernel_image: toolchain_check
+	docker run --rm -v $(PWD)/output:/output kernel.$(TOOLCHAIN)
 
 run_kernel_image:
-	docker run -it -v $(PWD)/output:/output $(KERNEL_IMAGE_VERSION) /bin/bash
+	docker run -it -v $(PWD)/output:/output kernel.$(TOOLCHAIN) /bin/bash
 
