@@ -27,12 +27,3 @@
  CT_ARCH_ARM_SHOW=y
  
  #
-@@ -207,7 +207,7 @@
- #
- # Tuple completion and aliasing
- #
--CT_TARGET_VENDOR="rpi3"
-+CT_TARGET_VENDOR="rpi4"
- CT_TARGET_ALIAS_SED_EXPR=""
- CT_TARGET_ALIAS=""
- 

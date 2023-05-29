@@ -1,0 +1,38 @@
+FROM crosstool.arm-cortex_a8-linux-gnueabi
+
+ARG KERNEL_VERSION=v6.x
+# will append .tar.xz
+ARG KERNEL_RELEASE=linux-6.3.3
+ARG KERNEL_CONFIG=""
+# This should probably set in cross, since it needs to match TOOLCHAIN
+ARG ARCH=arm
+
+ENV KERNEL_VERSION=$KERNEL_VERSION
+ENV KERNEL_RELEASE=$KERNEL_RELEASE
+ENV KERNEL_CONFIG=$KERNEL_CONFIG
+ENV ARCH=$ARCH
+ENV CROSS_COMPILE="$TOOLCHAIN"hf-
+
+WORKDIR /build/kernel
+RUN wget https://cdn.kernel.org/pub/linux/kernel/"$KERNEL_VERSION"/"$KERNEL_RELEASE".tar.xz
+RUN tar xf "$KERNEL_RELEASE".tar.xz
+RUN mv "$KERNEL_RELEASE" linux-stable
+WORKDIR /build/kernel/linux-stable
+
+RUN make mrproper
+
+COPY custom/"$KERNEL_CONFIG"* .
+
+RUN make multi_v7_defconfig
+# Making the patch:
+# 1. cp .config .config.def
+# 2. make menuconfig # and do your changes
+# 3. sudo sh -c "diff -u .config.def .config > /output/$TOOLCHAIN.kernel.patch"
+# and use this patch file as the KERNEL_CONFIG
+RUN if [ -e "$KERNEL_CONFIG" ] ;  then patch .config < "$KERNEL_CONFIG" ; fi
+
+# hopefully, we have 4 cores.
+# aARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" are unnecessary when they're in the env
+RUN make -j 4 zImage && make -j 4 modules && make dtbs
+
+CMD sudo sh -c "cp arch/"$ARCH"/boot/zImage /output/zImage.bbb && cp arch/"$ARCH"/boot/dts/am335x-boneblack.dtb /output"
