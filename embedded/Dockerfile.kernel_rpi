@@ -1,0 +1,50 @@
+FROM crosstool.aarch64-rpi3-linux-gnu
+
+ARG KERNEL_RELEASE=1.20230405
+ARG KERNEL_CONFIG=""
+# This should probably set in cross, since it needs to match TOOLCHAIN
+ARG ARCH=arm64
+
+ENV KERNEL_VERSION=$KERNEL_VERSION
+ENV KERNEL_RELEASE=$KERNEL_RELEASE
+ENV KERNEL_CONFIG=$KERNEL_CONFIG
+ENV ARCH=$ARCH
+ENV CROSS_COMPILE="$TOOLCHAIN"-
+
+WORKDIR /build/kernel
+RUN sudo apt install -y subversion libssl-dev
+RUN git clone --depth=1 -b "$KERNEL_RELEASE" https://github.com/raspberrypi/linux.git
+RUN svn export https://github.com/raspberrypi/firmware/trunk/boot
+# I guess this is a 'make clean' for the stuff that we will do ourselves
+RUN rm boot/kernel* && rm boot/*.dtb && rm boot/overlays/*.dtbo
+
+
+WORKDIR /build/kernel/linux
+
+# This needs to be done interactively, unless we already have a config
+COPY custom/"$KERNEL_CONFIG"* .
+RUN make mrproper
+
+RUN make bcm2711_defconfig
+# 1. cp .config .config.def
+# 2. make menuconfig # and do your changes
+# 3. sudo sh -c "diff -u .config.def .config > /output/$TOOLCHAIN.kernel.patch"
+# and use this patch file as the KERNEL_CONFIG
+RUN if [ -e "$KERNEL_CONFIG" ] ;  then patch .config < "$KERNEL_CONFIG" ; fi
+
+# hopefully, we have 4 cores.
+RUN make -j 4
+
+# creating these output files are difficult in CMD, so prep these now
+RUN echo enable_uart=1 > config.txt
+RUN echo arm_64bit=1 >> config.txt
+RUN echo console=serial0,115200 console=tty1 root=/dev/mmcblk0p2 rootwait > cmdline.txt
+
+ENV DEST_SUBDIR=rpi_boot
+CMD sudo sh -c "mkdir -p /output/"$DEST_SUBDIR"/overlays && \
+    cp arch/"$ARCH"/boot/Image /output/"$DEST_SUBDIR"/kernel8.img && \
+    cp arch/"$ARCH"/boot/dts/overlays/*.dtbo /output/"$DEST_SUBDIR"/overlays/ && \
+    cp arch/"$ARCH"/boot/dts/broadcom/*.dtb /output/"$DEST_SUBDIR"/ && \
+    cp arch/"$ARCH"/boot/dts/broadcom/*.dtb /output/"$DEST_SUBDIR"/ && \
+    cp config.txt /output/"$DEST_SUBDIR"/ && \
+    cp cmdline.txt /output/"$DEST_SUBDIR"/"
