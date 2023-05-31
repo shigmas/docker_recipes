@@ -1,5 +1,3 @@
-KERNEL_IMAGE_VERSION=kernel.001
-
 ifeq ($(TARGET),bbb)
 TOOLCHAIN = arm-cortex_a8-linux-gnueabi
 endif
@@ -9,6 +7,11 @@ endif
 ifeq ($(TARGET),rpi)
 TOOLCHAIN = aarch64-rpi3-linux-gnu
 endif
+
+# When we build our filesystem, we want to use this (we use the "cross" user
+# in the very base (cross) image). This is for busybox and for building the
+# root filesystem
+FS_ROOT=/home/cross/fsroot
 
 # Actually, only master seems to work.
 ifndef CROSSTOOL_VERSION
@@ -55,7 +58,7 @@ run_uboot_image: toolchain_check
 	docker run --rm -it -v $(PWD)/output:/output uboot.$(TOOLCHAIN) /bin/bash
 
 build_kernel_image: toolchain_check
-	DOCKER_BUILDKIT=1 docker build -t kernel.$(TOOLCHAIN) --build-arg KERNEL_CONFIG=$(TOOLCHAIN).kernel.patch --build-arg TOOLCHAIN=$(TOOLCHAIN) -f Dockerfile.kernel_$(TARGET) .
+	DOCKER_BUILDKIT=1 docker build -t kernel.$(TOOLCHAIN) --build-arg TOOLCHAIN=$(TOOLCHAIN) -f Dockerfile.kernel_$(TARGET) .
 
 export_kernel_image: toolchain_check
 	docker run --rm -v $(PWD)/output:/output kernel.$(TOOLCHAIN)
@@ -63,5 +66,19 @@ export_kernel_image: toolchain_check
 run_kernel_image:
 	docker run -it -v $(PWD)/output:/output kernel.$(TOOLCHAIN) /bin/bash
 
+build_rootfs_image: toolchain_check
+	DOCKER_BUILDKIT=1 docker build -t rootfs.$(TOOLCHAIN) --build-arg TOOLCHAIN=$(TOOLCHAIN) --build-arg FS_ROOT=$(FS_ROOT) -f Dockerfile.rootfs_$(TARGET) .
+
+export_rootfs_image: toolchain_check
+	docker run --rm -v $(PWD)/output:/output rootfs.$(TOOLCHAIN)
+
+run_rootfs_image: toolchain_check
+	docker run -it -v $(PWD)/output:/output rootfs.$(TOOLCHAIN) /bin/bash
+
+# There is no root filesystem, but this is a way to see the work so far.
 run_qemu_kernel:
-	QEMU_AUDIO_DRV=none qemu-system-arm -m 256M -nographic -M versatilepb -kernel output/zImage.qemu -append "console=ttyAMA0,115200" -dtb output/versatile-pb.dtb
+	QEMU_AUDIO_DRV=none qemu-system-arm -m 256M -nographic -M versatilepb \
+	-kernel output/zImage.qemu \
+	-append "console=ttyAMA0,115200 rdinit=/bin/sh" \
+	-dtb output/versatile-pb.dtb \
+	-initrd output/initramfs.cpio.gz
