@@ -1,0 +1,38 @@
+FROM ubuntu:22.04
+
+
+ARG RETERMINAL_VERSION
+ARG CUSTOM_CONFIG
+
+ENV RETERMINAL_VERSION=RETERMINAL_VERSION
+ENV CUSTOM_CONFIG=$(CUSTOM_CONFIG)
+
+# libssl-dev is needed for u-boot. (Should have put it on the next line)
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y autoconf automake bison bzip2 cmake flex g++ gawk gcc gettext \
+    git gperf help2man libncurses5-dev libstdc++6 libtool libtool-bin make patch \
+    python3-dev rsync texinfo unzip wget xz-utils cpio
+# vim is helpful. u-boot uses bc
+RUN DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y sudo vim libssl-dev bc u-boot-tools
+
+RUN useradd -ms /bin/bash cross && usermod -aG sudo cross
+RUN echo cross:cross | chpasswd
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/010_system_sudoers
+RUN chmod 440 /etc/sudoers.d/010_system_sudoers
+USER cross
+
+WORKDIR /build
+
+# If we can get a version, that'd be better.
+RUN git clone https://github.com/Seeed-Studio/seeed-linux-buildroot.git
+WORKDIR /build/seeed-linux-buildroot
+RUN if [ -e $RETERMINAL_VERSION ] ; then git checkout $(BUILDROOT_VERSION) ; fi
+
+RUN make reTerminal_64_defconfig
+
+# copy the custom config if it exists to override the stock
+#COPY custom/$CUSTOM_CONFIG* .
+
+RUN make || true

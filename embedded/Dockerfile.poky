@@ -1,0 +1,52 @@
+FROM ubuntu:22.04
+
+ARG YOCTO_VERSION=dunfell
+ARG BUILD_DIR=build
+
+ENV YOCTO_VERSION=$YOCTO_VERSION
+ENV BUILD_DIR=$BUILD_DIR
+
+# libssl-dev is needed for u-boot. (Should have put it on the next line)
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y autoconf automake bison bzip2 cmake flex g++ gawk gcc gettext \
+    git gperf help2man libncurses5-dev libstdc++6 libtool libtool-bin make patch \
+    python3-dev rsync texinfo unzip wget xz-utils sudo vim libssl-dev bc u-boot-tools \
+    cpio diffstat chrpath locales
+
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+ENV LANG en_US.UTF-8  
+ENV LANGUAGE en_US:en  
+ENV LC_ALL en_US.UTF-8
+
+RUN useradd -ms /bin/bash cross && usermod -aG sudo cross
+RUN echo cross:cross | chpasswd
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/010_system_sudoers
+RUN chmod 440 /etc/sudoers.d/010_system_sudoers
+USER cross
+
+WORKDIR /build
+
+# out later.
+ADD custom/* custom/
+
+# clone and build poky
+RUN git clone -b "$YOCTO_VERSION" git://git.yoctoproject.org/poky.git
+RUN sudo sh -c "echo source /build/poky/oe-init-build-env /build/$BUILD_DIR >> /etc/bash.bashrc"
+
+# This creates the directory and sets env variables. The env variables won't carry
+# to the next RUN line, but we need to use it to create the conf dir.
+RUN bash -c "source poky/oe-init-build-env $BUILD_DIR"
+
+# Because oe-init-build-env is run every time, we need to be in the 
+# will be run on RUN
+WORKDIR /build/$BUILD_DIR
+# uncomment qemuarm
+RUN sed -i 's/^#\(.*qemuarm\"\)$/\1/g' conf/local.conf
+# comment qemux86-64 (More specific this time because to only get the one without a #)
+RUN sed -i 's/^\(MACHINE.*qemux86-64\"\)$/#\1/g' conf/local.conf
+
+# Now, just to reiterate, oe-init-build-env will get run first
+WORKDIR /build/
+RUN bash -c "source poky/oe-init-build-env $BUILD_DIR && bitbake core-image-minimal"
