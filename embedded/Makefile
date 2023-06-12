@@ -12,7 +12,7 @@ ifeq ($(TARGET),rpi)
 endif
 
 ifndef YOCTO_VERSION
-	YOCTO_VERSION = dunfell
+	YOCTO_VERSION = kirkstone
 endif
 
 ifndef RETERMINAL_VERSION
@@ -108,13 +108,6 @@ ifndef BUILDROOT_CONFIG
 endif
 	docker run -it -v $(PWD)/output:/output buildroot.$(TARGET) /bin/bash
 
-# The variables are optional. CUSTOM_CONFIG should be in the custom directory. If BUILDROOT_VERSION is not set, we will use master
-build_buildroot_reterminal_image:
-	DOCKER_BUILDKIT=1 docker build -t buildroot.reterminal --build-arg RETERMINAL_VERSION=$(RETERMINAL_VERSION) --build-arg CUSTOM_CONFIG=$(CUSTOM_VERSION) -f Dockerfile.buildroot_reterminal .
-
-run_buildroot_reterminal_image:
-	docker run -it -v $(PWD)/output:/output buildroot.reterminal /bin/bash
-
 build_embtoolkit_image:
 	DOCKER_BUILDKIT=1 docker build -t embtoolkit.1 -f Dockerfile.embtoolkit .
 
@@ -122,8 +115,28 @@ run_embtoolkit_image:
 	docker run -it -v $(PWD)/output:/output  embtoolkit.1 /bin/bash
 
 build_poky_image:
-	DOCKER_BUILDKIT=1 docker build -t poky.$(YOCTO_VERSION) --build-arg YOCTO_VERSION=$(YOCTO_VERSION) --build-arg BUILD_DIR=$(BUILD_DIR) -f Dockerfile.poky .
+	DOCKER_BUILDKIT=1 docker build -t poky.$(YOCTO_VERSION) --build-arg YOCTO_VERSION=$(YOCTO_VERSION) -f Dockerfile.poky .
 
 run_poky_image:
 	# runqemu doesn't work in this yet.
 	docker run -it --privileged -v $(PWD)/output:/output  poky.$(YOCTO_VERSION) /bin/bash
+
+build_poky_bbb_image:
+	DOCKER_BUILDKIT=1 docker build -t poky_$(YOCTO_VERSION)_bbb --build-arg YOCTO_VERSION=$(YOCTO_VERSION) -f Dockerfile.poky_bbb .
+
+run_poky_bbb_image:
+	docker run -it --privileged -v $(PWD)/output:/output  poky_$(YOCTO_VERSION)_bbb /bin/bash
+
+# The variables are optional. CUSTOM_CONFIG should be in the custom directory. If BUILDROOT_VERSION is not set, we will use master
+build_buildroot_reterminal_image:
+	DOCKER_BUILDKIT=1 docker build -t buildroot.reterminal --build-arg RETERMINAL_VERSION=$(RETERMINAL_VERSION) --build-arg CUSTOM_CONFIG=$(CUSTOM_VERSION) -f Dockerfile.buildroot_reterminal .
+
+run_buildroot_reterminal_image:
+	docker run -it -v $(PWD)/output:/output buildroot.reterminal /bin/bash
+
+build_yocto_reterminal_image:
+	DOCKER_BUILDKIT=1 docker build -t buildroot.reterminal --build-arg YOCTO_VERSION=$(YOCTO_VERSION) --build-arg BUILD_DIR=build -f Dockerfile.yocto_reterminal .
+
+run_yocto_reterminal_image:
+	docker run -it -v $(PWD)/output:/output buildroot.reterminal
+
