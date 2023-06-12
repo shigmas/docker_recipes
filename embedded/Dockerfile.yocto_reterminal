@@ -1,0 +1,75 @@
+FROM ubuntu:22.04
+
+ARG YOCTO_VERSION=dunfell
+ARG BUILD_DIR=build
+
+ENV YOCTO_VERSION=$YOCTO_VERSION
+ENV BUILD_DIR=$BUILD_DIR
+
+# libssl-dev is needed for u-boot. (Should have put it on the next line)
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y autoconf automake bison bzip2 cmake flex g++ gawk gcc gettext \
+    git gperf help2man libncurses5-dev libstdc++6 libtool libtool-bin make patch \
+    python3-dev rsync texinfo unzip wget xz-utils cpio diffstat gcc-multilib socat \
+    python3-distutils chrpath locales \
+    liblz4-tool zstd
+    # liblz4-tool and zstd are for lz4c pzstd and zstd now required for yocto honister
+
+# vim is helpful. u-boot uses bc
+RUN DEBIAN_FRONTEND=noninteractive TZ=Asia/Japan \
+    apt-get install -y sudo vim libssl-dev bc u-boot-tools
+
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen
+ENV LANG en_US.UTF-8  
+ENV LANGUAGE en_US:en  
+ENV LC_ALL en_US.UTF-8
+
+RUN useradd -ms /bin/bash cross && usermod -aG sudo cross
+RUN echo cross:cross | chpasswd
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/010_system_sudoers
+RUN chmod 440 /etc/sudoers.d/010_system_sudoers
+USER cross
+
+WORKDIR /build/reterminal-yocto/layers
+
+RUN git clone -b $YOCTO_VERSION git://git.yoctoproject.org/poky
+#RUN git clone -b $YOCTO_VERSION https://github.com/Seeed-Studio/meta-seeed-cm4.git
+RUN git clone -b main https://github.com/Seeed-Studio/meta-seeed-cm4.git
+RUN git clone -b master git://git.yoctoproject.org/meta-raspberrypi
+RUN git clone -b $YOCTO_VERSION https://github.com/meta-qt5/meta-qt5.git
+RUN git clone -b $YOCTO_VERSION https://github.com/openembedded/meta-openembedded.git
+
+# Hack: https://github.com/Seeed-Studio/seeed-linux-dtoverlays/issues/37
+# There is a better way, but this is simpler for now
+#WORKDIR /build/reterminal-yocto/layers/meta-seeed-cm4
+#RUN git checkout 7c846e23de9346d318fbdc8ac92dcc72b90fb6ce
+
+WORKDIR /build/reterminal-yocto/layers/meta-raspberrypi
+RUN cp -r recipes-kernel/linux/ ../
+# Not sure why the seeed instructions do this in two steps...
+RUN git checkout $YOCTO_VERSION
+RUN rm -r recipes-kernel/linux/
+RUN mv -f ../linux/ recipes-kernel/
+
+WORKDIR /build/reterminal-yocto/
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR"
+
+# This only works when using the interactive bash shell. I don't know how to do this with RUN, so...
+RUN sudo sh -c "echo source /build/reterminal-yocto/layers/poky/oe-init-build-env /build/reterminal-yocto/$BUILD_DIR >> /home/cross/.bashrc"
+
+# These really just add to the conf/bblayers.conf. But, use the tools
+WORKDIR /build/reterminal-yocto/
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR && bitbake-layers add-layer ../layers/meta-raspberrypi"
+WORKDIR /build/reterminal-yocto/
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR && bitbake-layers add-layer ../layers/meta-seeed-cm4"
+WORKDIR /build/reterminal-yocto/
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR && bitbake-layers add-layer ../layers/meta-qt5"
+WORKDIR /build/reterminal-yocto/
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR && bitbake-layers add-layer ../layers/meta-openembedded/meta-oe"
+WORKDIR /build/reterminal-yocto/
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR && bitbake-layers add-layer ../layers/meta-openembedded/meta-python"
+
+WORKDIR /build/reterminal-yocto/
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR && MACHINE=seeed-reterminal bitbake rpi-test-image || true"

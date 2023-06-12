@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 ARG YOCTO_VERSION=dunfell
-ARG BUILD_DIR=build
+ARG BUILD_DIR=build-poky
 
 ENV YOCTO_VERSION=$YOCTO_VERSION
 ENV BUILD_DIR=$BUILD_DIR
@@ -12,7 +12,9 @@ RUN apt-get update && \
     apt-get install -y autoconf automake bison bzip2 cmake flex g++ gawk gcc gettext \
     git gperf help2man libncurses5-dev libstdc++6 libtool libtool-bin make patch \
     python3-dev rsync texinfo unzip wget xz-utils sudo vim libssl-dev bc u-boot-tools \
-    cpio diffstat chrpath locales
+    cpio diffstat chrpath locales \
+    liblz4-tool zstd
+    # liblz4-tool and zstd are for lz4c pzstd and zstd now required for yocto honister
 
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
     locale-gen
@@ -31,13 +33,16 @@ WORKDIR /build
 # out later.
 ADD custom/* custom/
 
+WORKDIR /build/layers
+
 # clone and build poky
 RUN git clone -b "$YOCTO_VERSION" git://git.yoctoproject.org/poky.git
-RUN sudo sh -c "echo source /build/poky/oe-init-build-env /build/$BUILD_DIR >> /etc/bash.bashrc"
+RUN sudo sh -c "echo source /build/layers/poky/oe-init-build-env $BUILD_DIR >> /etc/bash.bashrc"
 
+WORKDIR /build
 # This creates the directory and sets env variables. The env variables won't carry
 # to the next RUN line, but we need to use it to create the conf dir.
-RUN bash -c "source poky/oe-init-build-env $BUILD_DIR"
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR"
 
 # Because oe-init-build-env is run every time, we need to be in the 
 # will be run on RUN
@@ -49,4 +54,4 @@ RUN sed -i 's/^\(MACHINE.*qemux86-64\"\)$/#\1/g' conf/local.conf
 
 # Now, just to reiterate, oe-init-build-env will get run first
 WORKDIR /build/
-RUN bash -c "source poky/oe-init-build-env $BUILD_DIR && bitbake core-image-minimal"
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR && bitbake core-image-minimal"

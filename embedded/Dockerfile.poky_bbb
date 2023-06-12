@@ -1,0 +1,25 @@
+# Should we rename the images to the TARGET (from the Makefile)? Pro: It makes
+# it more human readable. Con: ...?
+FROM poky.kirkstone
+
+ENV BUILD_DIR=build-bbb
+
+
+WORKDIR /build
+RUN git clone -b "$YOCTO_VERSION" git://git.openembedded.org/meta-openembedded
+# no yocto version/branch?
+#RUN git clone git://github.com/beagleboard/meta-beagleboard
+
+RUN sh -c "echo source /build/layers/poky/oe-init-build-env $BUILD_DIR >> /home/cross/.bashrc"
+
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR"
+
+WORKDIR /build/$BUILD_DIR
+# uncomment beaglebone-yocto, which is already in poky
+RUN sed -i 's/^#\(.*beaglebone-yocto\"\)$/\1/g' conf/local.conf
+# comment qemux86-64 (More specific this time because to only get the one without a #)
+RUN sed -i 's/^\(MACHINE.*qemux86-64\"\)$/#\1/g' conf/local.conf
+
+WORKDIR /build
+RUN bash -c "source layers/poky/oe-init-build-env $BUILD_DIR && bitbake core-image-sato"
+
